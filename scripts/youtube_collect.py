@@ -2,13 +2,17 @@ import os
 import json
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 API_KEY = os.environ["YOUTUBE_API_KEY"]
 CHANNEL_ID = "UCc-itdQHxLvUlPrDxIiSJrA"
 
+DATA_FILE = Path("data/youtube_videos.json")
+
 
 def youtube_api(endpoint, params):
     params["key"] = API_KEY
+
     url = "https://www.googleapis.com/youtube/v3/" + endpoint
     url += "?" + urllib.parse.urlencode(params)
 
@@ -32,29 +36,49 @@ uploads_playlist_id = (
     ["uploads"]
 )
 
-# ② アップロード動画一覧から最新5件を取得
-video_data = youtube_api(
-    "playlistItems",
-    {
+
+# ② アップロード動画をすべて取得
+videos = []
+page_token = None
+
+while True:
+    params = {
         "part": "snippet,contentDetails",
         "playlistId": uploads_playlist_id,
-        "maxResults": 5,
-    },
-)
+        "maxResults": 50,
+    }
 
-# ③ 必要な情報だけ取り出す
-videos = []
+    if page_token:
+        params["pageToken"] = page_token
 
-for item in video_data["items"]:
-    video_id = item["contentDetails"]["videoId"]
+    video_data = youtube_api("playlistItems", params)
 
-    videos.append(
-        {
-            "video_id": video_id,
-            "title": item["snippet"]["title"],
-            "published_at": item["snippet"]["publishedAt"],
-            "url": f"https://www.youtube.com/watch?v={video_id}",
-        }
-    )
+    for item in video_data["items"]:
+        video_id = item["contentDetails"]["videoId"]
 
-print(json.dumps(videos, ensure_ascii=False, indent=2))
+        videos.append(
+            {
+                "video_id": video_id,
+                "title": item["snippet"]["title"],
+                "published_at": item["snippet"]["publishedAt"],
+                "url": f"https://www.youtube.com/watch?v={video_id}",
+            }
+        )
+
+    page_token = video_data.get("nextPageToken")
+
+    if not page_token:
+        break
+
+
+# ③ dataフォルダを作成
+DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+
+# ④ JSONファイルとして保存
+with DATA_FILE.open("w", encoding="utf-8") as file:
+    json.dump(videos, file, ensure_ascii=False, indent=2)
+
+
+print(f"{len(videos)}件の動画を取得しました。")
+print(f"保存先: {DATA_FILE}")
