@@ -24,6 +24,28 @@
             margin-bottom: 20px;
         }
 
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-button {
+            border: 1px solid #ccc;
+            background: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .filter-button.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+
         .video {
             background: white;
             padding: 15px;
@@ -50,6 +72,12 @@
         a {
             color: #06c;
         }
+
+        .count {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 
@@ -61,66 +89,198 @@
         YouTube動画一覧
     </p>
 
+    <div class="filters">
+        <button class="filter-button active" data-filter="all">
+            すべて
+        </button>
+
+        <button class="filter-button" data-filter="unchecked">
+            未確認
+        </button>
+
+        <button class="filter-button" data-filter="checked">
+            確認済み
+        </button>
+
+        <button class="filter-button" data-filter="scrapped">
+            スクラップ済み
+        </button>
+    </div>
+
+    <div id="count" class="count"></div>
+
     <div id="video-list">
         読み込み中……
     </div>
 
+
     <script>
+
+        let allVideos = [];
+        let currentFilter = "all";
+
+
+        // 動画データを読み込む
         fetch("data/youtube_videos.json")
             .then(response => response.json())
             .then(videos => {
 
-                const list = document.getElementById("video-list");
+                allVideos = videos;
 
-                list.innerHTML = "";
+                displayVideos();
 
-                videos.forEach(video => {
-
-                    const item = document.createElement("div");
-                    item.className = "video";
-
-                    const title = document.createElement("div");
-                    title.className = "video-title";
-                    title.textContent = video.title;
-
-                    const date = document.createElement("div");
-                    date.className = "date";
-
-                    const publishedDate = new Date(video.published_at);
-
-                    date.textContent =
-                        "公開日：" +
-                        publishedDate.toLocaleDateString("ja-JP");
-
-                    const status = document.createElement("div");
-                    status.className = "status";
-
-                    if (video.checked) {
-                        status.textContent = video.scrapped
-                            ? "確認済み・スクラップ済み"
-                            : "確認済み・スクラップなし";
-                    } else {
-                        status.textContent = "未確認";
-                    }
-
-                    const link = document.createElement("a");
-                    link.href = video.url;
-                    link.target = "_blank";
-                    link.textContent = "YouTubeを見る";
-
-                    item.appendChild(title);
-                    item.appendChild(date);
-                    item.appendChild(status);
-                    item.appendChild(link);
-
-                    list.appendChild(item);
-                });
             })
             .catch(error => {
+
                 document.getElementById("video-list").textContent =
                     "動画データの読み込みに失敗しました。";
+
                 console.error(error);
+
             });
+
+
+        // 動画を表示する
+        function displayVideos() {
+
+            const list = document.getElementById("video-list");
+            const count = document.getElementById("count");
+
+            list.innerHTML = "";
+
+
+            // フィルター
+            let filteredVideos = allVideos.filter(video => {
+
+                if (currentFilter === "all") {
+                    return true;
+                }
+
+                if (currentFilter === "unchecked") {
+                    return !video.checked;
+                }
+
+                if (currentFilter === "checked") {
+                    return video.checked;
+                }
+
+                if (currentFilter === "scrapped") {
+                    return video.scrapped;
+                }
+
+            });
+
+
+            // 件数
+            count.textContent =
+                `${filteredVideos.length}件`;
+
+
+            // 動画を表示
+            filteredVideos.forEach(video => {
+
+                const item = document.createElement("div");
+                item.className = "video";
+
+
+                const title = document.createElement("div");
+                title.className = "video-title";
+                title.textContent = video.title;
+
+
+                const date = document.createElement("div");
+                date.className = "date";
+
+                const publishedDate =
+                    new Date(video.published_at);
+
+                date.textContent =
+                    "公開日：" +
+                    publishedDate.toLocaleDateString("ja-JP");
+
+
+                const status = document.createElement("div");
+                status.className = "status";
+
+
+                if (video.checked) {
+
+                    if (video.scrapped) {
+                        status.textContent =
+                            "確認済み・スクラップ済み";
+                    } else {
+                        status.textContent =
+                            "確認済み・スクラップなし";
+                    }
+
+                } else {
+
+                    status.textContent =
+                        "未確認";
+
+                }
+
+
+                const link = document.createElement("a");
+
+                link.href = video.url;
+                link.target = "_blank";
+                link.textContent = "YouTubeを見る";
+
+
+                item.appendChild(title);
+                item.appendChild(date);
+                item.appendChild(status);
+                item.appendChild(link);
+
+
+                list.appendChild(item);
+
+            });
+
+
+            // 動画がない場合
+            if (filteredVideos.length === 0) {
+
+                list.textContent =
+                    "該当する動画はありません。";
+
+            }
+
+        }
+
+
+        // フィルターボタン
+        document.querySelectorAll(".filter-button")
+            .forEach(button => {
+
+                button.addEventListener("click", () => {
+
+                    // 現在のフィルターを変更
+                    currentFilter =
+                        button.dataset.filter;
+
+
+                    // ボタンの見た目を変更
+                    document
+                        .querySelectorAll(".filter-button")
+                        .forEach(otherButton => {
+
+                            otherButton.classList.remove("active");
+
+                        });
+
+
+                    button.classList.add("active");
+
+
+                    // 動画を再表示
+                    displayVideos();
+
+                });
+
+            });
+
     </script>
 
 </body>
