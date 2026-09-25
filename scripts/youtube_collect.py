@@ -37,8 +37,8 @@ uploads_playlist_id = (
 )
 
 
-# ② アップロード動画をすべて取得
-videos = []
+# ② YouTubeから動画をすべて取得
+youtube_videos = []
 page_token = None
 
 while True:
@@ -56,7 +56,7 @@ while True:
     for item in video_data["items"]:
         video_id = item["contentDetails"]["videoId"]
 
-        videos.append(
+        youtube_videos.append(
             {
                 "video_id": video_id,
                 "title": item["snippet"]["title"],
@@ -71,14 +71,47 @@ while True:
         break
 
 
-# ③ dataフォルダを作成
+# ③ 既存のJSONを読み込む
+existing_videos = {}
+
+if DATA_FILE.exists():
+    with DATA_FILE.open("r", encoding="utf-8") as file:
+        old_videos = json.load(file)
+
+    for video in old_videos:
+        existing_videos[video["video_id"]] = video
+
+
+# ④ 新しい動画だけ追加する
+new_count = 0
+
+for video in youtube_videos:
+    video_id = video["video_id"]
+
+    if video_id not in existing_videos:
+        existing_videos[video_id] = video
+        new_count += 1
+
+
+# ⑤ 日付順に並べる
+videos = list(existing_videos.values())
+
+videos.sort(
+    key=lambda video: video["published_at"],
+    reverse=True
+)
+
+
+# ⑥ dataフォルダを作成
 DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
-# ④ JSONファイルとして保存
+# ⑦ JSONを保存
 with DATA_FILE.open("w", encoding="utf-8") as file:
     json.dump(videos, file, ensure_ascii=False, indent=2)
 
 
-print(f"{len(videos)}件の動画を取得しました。")
+print(f"YouTubeから取得した動画数: {len(youtube_videos)}件")
+print(f"新しく追加した動画数: {new_count}件")
+print(f"保存されている動画数: {len(videos)}件")
 print(f"保存先: {DATA_FILE}")
