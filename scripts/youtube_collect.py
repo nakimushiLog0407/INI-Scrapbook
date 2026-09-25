@@ -89,11 +89,23 @@ for video in youtube_videos:
     video_id = video["video_id"]
 
     if video_id not in existing_videos:
+        video["checked"] = False
+        video["scrapped"] = False
+
         existing_videos[video_id] = video
         new_count += 1
 
 
-# ⑤ 日付順に並べる
+# ⑤ 既存動画に管理項目がなければ追加する
+for video in existing_videos.values():
+    if "checked" not in video:
+        video["checked"] = False
+
+    if "scrapped" not in video:
+        video["scrapped"] = False
+
+
+# ⑥ 日付順に並べる
 videos = list(existing_videos.values())
 
 videos.sort(
@@ -102,11 +114,11 @@ videos.sort(
 )
 
 
-# ⑥ dataフォルダを作成
+# ⑦ dataフォルダを作成
 DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
-# ⑦ JSONを保存
+# ⑧ JSONを保存
 with DATA_FILE.open("w", encoding="utf-8") as file:
     json.dump(videos, file, ensure_ascii=False, indent=2)
 
