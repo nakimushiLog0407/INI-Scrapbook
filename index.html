@@ -3,14 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>INI Scrapbook</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f7f7f7;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .video {
+            background: white;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+        }
+
+        .video-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .date {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: #06c;
+        }
+    </style>
 </head>
 
 <body>
+
     <h1>INI Scrapbook</h1>
 
-    <p>スクラップ管理システム</p>
+    <p class="description">
+        YouTube動画一覧
+    </p>
 
-    <p>ここにYouTube動画一覧を表示していきます。</p>
+    <div id="video-list">
+        読み込み中……
+    </div>
+
+    <script>
+        fetch("data/youtube_videos.json")
+            .then(response => response.json())
+            .then(videos => {
+
+                const list = document.getElementById("video-list");
+
+                list.innerHTML = "";
+
+                videos.forEach(video => {
+
+                    const item = document.createElement("div");
+                    item.className = "video";
+
+                    const title = document.createElement("div");
+                    title.className = "video-title";
+                    title.textContent = video.title;
+
+                    const date = document.createElement("div");
+                    date.className = "date";
+
+                    const publishedDate = new Date(video.published_at);
+
+                    date.textContent =
+                        "公開日：" +
+                        publishedDate.toLocaleDateString("ja-JP");
+
+                    const status = document.createElement("div");
+                    status.className = "status";
+
+                    if (video.checked) {
+                        status.textContent = video.scrapped
+                            ? "確認済み・スクラップ済み"
+                            : "確認済み・スクラップなし";
+                    } else {
+                        status.textContent = "未確認";
+                    }
+
+                    const link = document.createElement("a");
+                    link.href = video.url;
+                    link.target = "_blank";
+                    link.textContent = "YouTubeを見る";
+
+                    item.appendChild(title);
+                    item.appendChild(date);
+                    item.appendChild(status);
+                    item.appendChild(link);
+
+                    list.appendChild(item);
+                });
+            })
+            .catch(error => {
+                document.getElementById("video-list").textContent =
+                    "動画データの読み込みに失敗しました。";
+                console.error(error);
+            });
+    </script>
+
 </body>
 </html>
