@@ -61,12 +61,34 @@
         .date {
             color: #777;
             font-size: 14px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .status-controls {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .status-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .status-control input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
 
         .status {
             font-size: 14px;
-            margin-bottom: 8px;
+            color: #666;
+            margin-bottom: 10px;
         }
 
         a {
@@ -119,6 +141,77 @@
         let allVideos = [];
         let currentFilter = "all";
 
+        const STORAGE_KEY = "iniScrapbookStatuses";
+
+
+        // ブラウザに保存されているステータスを取得
+        function loadStatuses() {
+
+            try {
+
+                const saved =
+                    localStorage.getItem(STORAGE_KEY);
+
+                return saved
+                    ? JSON.parse(saved)
+                    : {};
+
+            } catch (error) {
+
+                console.error(
+                    "ステータスの読み込みに失敗しました。",
+                    error
+                );
+
+                return {};
+
+            }
+
+        }
+
+
+        // ステータスをブラウザに保存
+        function saveStatuses(statuses) {
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(statuses)
+            );
+
+        }
+
+
+        // 動画の現在のステータスを取得
+        function getStatus(videoId) {
+
+            const statuses = loadStatuses();
+
+            return statuses[videoId] || {
+                checked: false,
+                scrapped: false
+            };
+
+        }
+
+
+        // 動画のステータスを変更
+        function updateStatus(
+            videoId,
+            checked,
+            scrapped
+        ) {
+
+            const statuses = loadStatuses();
+
+            statuses[videoId] = {
+                checked: checked,
+                scrapped: scrapped
+            };
+
+            saveStatuses(statuses);
+
+        }
+
 
         // 動画データを読み込む
         fetch("data/youtube_videos.json")
@@ -132,7 +225,9 @@
             })
             .catch(error => {
 
-                document.getElementById("video-list").textContent =
+                document.getElementById(
+                    "video-list"
+                ).textContent =
                     "動画データの読み込みに失敗しました。";
 
                 console.error(error);
@@ -143,32 +238,41 @@
         // 動画を表示する
         function displayVideos() {
 
-            const list = document.getElementById("video-list");
-            const count = document.getElementById("count");
+            const list =
+                document.getElementById("video-list");
+
+            const count =
+                document.getElementById("count");
 
             list.innerHTML = "";
 
 
             // フィルター
-            let filteredVideos = allVideos.filter(video => {
+            const filteredVideos =
+                allVideos.filter(video => {
 
-                if (currentFilter === "all") {
+                    const status =
+                        getStatus(video.video_id);
+
+                    if (currentFilter === "all") {
+                        return true;
+                    }
+
+                    if (currentFilter === "unchecked") {
+                        return !status.checked;
+                    }
+
+                    if (currentFilter === "checked") {
+                        return status.checked;
+                    }
+
+                    if (currentFilter === "scrapped") {
+                        return status.scrapped;
+                    }
+
                     return true;
-                }
 
-                if (currentFilter === "unchecked") {
-                    return !video.checked;
-                }
-
-                if (currentFilter === "checked") {
-                    return video.checked;
-                }
-
-                if (currentFilter === "scrapped") {
-                    return video.scrapped;
-                }
-
-            });
+                });
 
 
             // 件数
@@ -179,16 +283,26 @@
             // 動画を表示
             filteredVideos.forEach(video => {
 
-                const item = document.createElement("div");
+                const currentStatus =
+                    getStatus(video.video_id);
+
+
+                const item =
+                    document.createElement("div");
+
                 item.className = "video";
 
 
-                const title = document.createElement("div");
+                const title =
+                    document.createElement("div");
+
                 title.className = "video-title";
                 title.textContent = video.title;
 
 
-                const date = document.createElement("div");
+                const date =
+                    document.createElement("div");
+
                 date.className = "date";
 
                 const publishedDate =
@@ -196,41 +310,154 @@
 
                 date.textContent =
                     "公開日：" +
-                    publishedDate.toLocaleDateString("ja-JP");
+                    publishedDate.toLocaleDateString(
+                        "ja-JP"
+                    );
 
 
-                const status = document.createElement("div");
-                status.className = "status";
+                // チェックボックスエリア
+                const controls =
+                    document.createElement("div");
+
+                controls.className =
+                    "status-controls";
 
 
-                if (video.checked) {
+                // 確認済み
+                const checkedLabel =
+                    document.createElement("label");
 
-                    if (video.scrapped) {
-                        status.textContent =
-                            "確認済み・スクラップ済み";
+                checkedLabel.className =
+                    "status-control";
+
+
+                const checkedInput =
+                    document.createElement("input");
+
+                checkedInput.type = "checkbox";
+                checkedInput.checked =
+                    currentStatus.checked;
+
+
+                checkedLabel.appendChild(
+                    checkedInput
+                );
+
+                checkedLabel.append(
+                    "確認済み"
+                );
+
+
+                // スクラップ済み
+                const scrappedLabel =
+                    document.createElement("label");
+
+                scrappedLabel.className =
+                    "status-control";
+
+
+                const scrappedInput =
+                    document.createElement("input");
+
+                scrappedInput.type = "checkbox";
+                scrappedInput.checked =
+                    currentStatus.scrapped;
+
+
+                scrappedLabel.appendChild(
+                    scrappedInput
+                );
+
+                scrappedLabel.append(
+                    "スクラップ済み"
+                );
+
+
+                controls.appendChild(
+                    checkedLabel
+                );
+
+                controls.appendChild(
+                    scrappedLabel
+                );
+
+
+                // 状態表示
+                const statusText =
+                    document.createElement("div");
+
+                statusText.className = "status";
+
+
+                function refreshStatusText() {
+
+                    if (checkedInput.checked) {
+
+                        if (scrappedInput.checked) {
+
+                            statusText.textContent =
+                                "確認済み・スクラップ済み";
+
+                        } else {
+
+                            statusText.textContent =
+                                "確認済み・スクラップなし";
+
+                        }
+
                     } else {
-                        status.textContent =
-                            "確認済み・スクラップなし";
+
+                        statusText.textContent =
+                            "未確認";
+
                     }
-
-                } else {
-
-                    status.textContent =
-                        "未確認";
 
                 }
 
 
-                const link = document.createElement("a");
+                refreshStatusText();
+
+
+                // ステータス変更時
+                function handleStatusChange() {
+
+                    updateStatus(
+                        video.video_id,
+                        checkedInput.checked,
+                        scrappedInput.checked
+                    );
+
+                    refreshStatusText();
+
+                }
+
+
+                checkedInput.addEventListener(
+                    "change",
+                    handleStatusChange
+                );
+
+
+                scrappedInput.addEventListener(
+                    "change",
+                    handleStatusChange
+                );
+
+
+                // YouTubeリンク
+                const link =
+                    document.createElement("a");
 
                 link.href = video.url;
                 link.target = "_blank";
-                link.textContent = "YouTubeを見る";
+                link.textContent =
+                    "YouTubeを見る";
 
 
                 item.appendChild(title);
                 item.appendChild(date);
-                item.appendChild(status);
+                item.appendChild(controls);
+                item.appendChild(statusText);
                 item.appendChild(link);
 
 
@@ -251,33 +478,40 @@
 
 
         // フィルターボタン
-        document.querySelectorAll(".filter-button")
+        document
+            .querySelectorAll(".filter-button")
             .forEach(button => {
 
-                button.addEventListener("click", () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    // 現在のフィルターを変更
-                    currentFilter =
-                        button.dataset.filter;
-
-
-                    // ボタンの見た目を変更
-                    document
-                        .querySelectorAll(".filter-button")
-                        .forEach(otherButton => {
-
-                            otherButton.classList.remove("active");
-
-                        });
+                        currentFilter =
+                            button.dataset.filter;
 
 
-                    button.classList.add("active");
+                        document
+                            .querySelectorAll(
+                                ".filter-button"
+                            )
+                            .forEach(otherButton => {
+
+                                otherButton
+                                    .classList
+                                    .remove("active");
+
+                            });
 
 
-                    // 動画を再表示
-                    displayVideos();
+                        button.classList.add(
+                            "active"
+                        );
 
-                });
+
+                        displayVideos();
+
+                    }
+                );
 
             });
 
