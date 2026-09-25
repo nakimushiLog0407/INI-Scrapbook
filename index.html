@@ -64,18 +64,12 @@
             margin-bottom: 10px;
         }
 
-        .status-controls {
-            display: flex;
-            gap: 18px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
         .status-control {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             font-size: 14px;
+            margin-bottom: 10px;
             cursor: pointer;
         }
 
@@ -83,12 +77,6 @@
             width: 18px;
             height: 18px;
             cursor: pointer;
-        }
-
-        .status {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
         }
 
         a {
@@ -112,21 +100,25 @@
     </p>
 
     <div class="filters">
-        <button class="filter-button active" data-filter="all">
+
+        <button
+            class="filter-button active"
+            data-filter="all">
             すべて
         </button>
 
-        <button class="filter-button" data-filter="unchecked">
-            未確認
+        <button
+            class="filter-button"
+            data-filter="unscrapped">
+            未スクラップ
         </button>
 
-        <button class="filter-button" data-filter="checked">
-            確認済み
-        </button>
-
-        <button class="filter-button" data-filter="scrapped">
+        <button
+            class="filter-button"
+            data-filter="scrapped">
             スクラップ済み
         </button>
+
     </div>
 
     <div id="count" class="count"></div>
@@ -144,7 +136,7 @@
         const STORAGE_KEY = "iniScrapbookStatuses";
 
 
-        // ブラウザに保存されているステータスを取得
+        // 保存されているステータスを読み込む
         function loadStatuses() {
 
             try {
@@ -170,7 +162,7 @@
         }
 
 
-        // ステータスをブラウザに保存
+        // ステータスを保存する
         function saveStatuses(statuses) {
 
             localStorage.setItem(
@@ -181,30 +173,27 @@
         }
 
 
-        // 動画の現在のステータスを取得
-        function getStatus(videoId) {
+        // 指定した動画がスクラップ済みか取得
+        function isScrapped(videoId) {
 
             const statuses = loadStatuses();
 
-            return statuses[videoId] || {
-                checked: false,
-                scrapped: false
-            };
+            return (
+                statuses[videoId]?.scrapped === true
+            );
 
         }
 
 
-        // 動画のステータスを変更
-        function updateStatus(
+        // スクラップ状態を変更
+        function updateScrapStatus(
             videoId,
-            checked,
             scrapped
         ) {
 
             const statuses = loadStatuses();
 
             statuses[videoId] = {
-                checked: checked,
                 scrapped: scrapped
             };
 
@@ -213,9 +202,19 @@
         }
 
 
-        // 動画データを読み込む
+        // YouTube動画データを読み込む
         fetch("data/youtube_videos.json")
-            .then(response => response.json())
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error(
+                        "動画データを取得できませんでした。"
+                    );
+                }
+
+                return response.json();
+
+            })
             .then(videos => {
 
                 allVideos = videos;
@@ -225,9 +224,9 @@
             })
             .catch(error => {
 
-                document.getElementById(
-                    "video-list"
-                ).textContent =
+                document
+                    .getElementById("video-list")
+                    .textContent =
                     "動画データの読み込みに失敗しました。";
 
                 console.error(error);
@@ -235,39 +234,49 @@
             });
 
 
-        // 動画を表示する
+        // 動画一覧を表示
         function displayVideos() {
 
             const list =
-                document.getElementById("video-list");
+                document.getElementById(
+                    "video-list"
+                );
 
             const count =
-                document.getElementById("count");
+                document.getElementById(
+                    "count"
+                );
 
             list.innerHTML = "";
 
 
-            // フィルター
+            // 現在のフィルターに合う動画だけ取得
             const filteredVideos =
                 allVideos.filter(video => {
 
-                    const status =
-                        getStatus(video.video_id);
+                    const scrapped =
+                        isScrapped(
+                            video.video_id
+                        );
 
-                    if (currentFilter === "all") {
+                    if (
+                        currentFilter === "all"
+                    ) {
                         return true;
                     }
 
-                    if (currentFilter === "unchecked") {
-                        return !status.checked;
+                    if (
+                        currentFilter ===
+                        "unscrapped"
+                    ) {
+                        return !scrapped;
                     }
 
-                    if (currentFilter === "checked") {
-                        return status.checked;
-                    }
-
-                    if (currentFilter === "scrapped") {
-                        return status.scrapped;
+                    if (
+                        currentFilter ===
+                        "scrapped"
+                    ) {
+                        return scrapped;
                     }
 
                     return true;
@@ -283,181 +292,130 @@
             // 動画を表示
             filteredVideos.forEach(video => {
 
-                const currentStatus =
-                    getStatus(video.video_id);
-
-
                 const item =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
                 item.className = "video";
 
 
+                // タイトル
                 const title =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
-                title.className = "video-title";
-                title.textContent = video.title;
+                title.className =
+                    "video-title";
+
+                title.textContent =
+                    video.title;
 
 
+                // 公開日
                 const date =
-                    document.createElement("div");
+                    document.createElement(
+                        "div"
+                    );
 
                 date.className = "date";
 
                 const publishedDate =
-                    new Date(video.published_at);
+                    new Date(
+                        video.published_at
+                    );
 
                 date.textContent =
                     "公開日：" +
-                    publishedDate.toLocaleDateString(
-                        "ja-JP"
+                    publishedDate
+                        .toLocaleDateString(
+                            "ja-JP"
+                        );
+
+
+                // スクラップ済みチェック
+                const scrapLabel =
+                    document.createElement(
+                        "label"
+                    );
+
+                scrapLabel.className =
+                    "status-control";
+
+
+                const scrapInput =
+                    document.createElement(
+                        "input"
+                    );
+
+                scrapInput.type =
+                    "checkbox";
+
+                scrapInput.checked =
+                    isScrapped(
+                        video.video_id
                     );
 
 
-                // チェックボックスエリア
-                const controls =
-                    document.createElement("div");
-
-                controls.className =
-                    "status-controls";
-
-
-                // 確認済み
-                const checkedLabel =
-                    document.createElement("label");
-
-                checkedLabel.className =
-                    "status-control";
-
-
-                const checkedInput =
-                    document.createElement("input");
-
-                checkedInput.type = "checkbox";
-                checkedInput.checked =
-                    currentStatus.checked;
-
-
-                checkedLabel.appendChild(
-                    checkedInput
+                scrapLabel.appendChild(
+                    scrapInput
                 );
 
-                checkedLabel.append(
-                    "確認済み"
-                );
-
-
-                // スクラップ済み
-                const scrappedLabel =
-                    document.createElement("label");
-
-                scrappedLabel.className =
-                    "status-control";
-
-
-                const scrappedInput =
-                    document.createElement("input");
-
-                scrappedInput.type = "checkbox";
-                scrappedInput.checked =
-                    currentStatus.scrapped;
-
-
-                scrappedLabel.appendChild(
-                    scrappedInput
-                );
-
-                scrappedLabel.append(
+                scrapLabel.append(
                     "スクラップ済み"
                 );
 
 
-                controls.appendChild(
-                    checkedLabel
-                );
+                // チェック変更時
+                scrapInput.addEventListener(
+                    "change",
+                    () => {
 
-                controls.appendChild(
-                    scrappedLabel
-                );
+                        updateScrapStatus(
+                            video.video_id,
+                            scrapInput.checked
+                        );
 
-
-                // 状態表示
-                const statusText =
-                    document.createElement("div");
-
-                statusText.className = "status";
-
-
-                function refreshStatusText() {
-
-                    if (checkedInput.checked) {
-
-                        if (scrappedInput.checked) {
-
-                            statusText.textContent =
-                                "確認済み・スクラップ済み";
-
-                        } else {
-
-                            statusText.textContent =
-                                "確認済み・スクラップなし";
-
+                        /*
+                         * 「未スクラップ」または
+                         * 「スクラップ済み」で
+                         * 絞り込んでいる場合は、
+                         * チェック変更後に一覧を
+                         * 更新する。
+                         */
+                        if (
+                            currentFilter
+                            !== "all"
+                        ) {
+                            displayVideos();
                         }
 
-                    } else {
-
-                        statusText.textContent =
-                            "未確認";
-
                     }
-
-                }
-
-
-                refreshStatusText();
-
-
-                // ステータス変更時
-                function handleStatusChange() {
-
-                    updateStatus(
-                        video.video_id,
-                        checkedInput.checked,
-                        scrappedInput.checked
-                    );
-
-                    refreshStatusText();
-
-                }
-
-
-                checkedInput.addEventListener(
-                    "change",
-                    handleStatusChange
-                );
-
-
-                scrappedInput.addEventListener(
-                    "change",
-                    handleStatusChange
                 );
 
 
                 // YouTubeリンク
                 const link =
-                    document.createElement("a");
+                    document.createElement(
+                        "a"
+                    );
 
                 link.href = video.url;
                 link.target = "_blank";
+                link.rel =
+                    "noopener noreferrer";
+
                 link.textContent =
                     "YouTubeを見る";
 
 
+                // カードに追加
                 item.appendChild(title);
                 item.appendChild(date);
-                item.appendChild(controls);
-                item.appendChild(statusText);
+                item.appendChild(
+                    scrapLabel
+                );
                 item.appendChild(link);
 
 
@@ -466,8 +424,10 @@
             });
 
 
-            // 動画がない場合
-            if (filteredVideos.length === 0) {
+            // 該当動画が0件の場合
+            if (
+                filteredVideos.length === 0
+            ) {
 
                 list.textContent =
                     "該当する動画はありません。";
@@ -479,7 +439,9 @@
 
         // フィルターボタン
         document
-            .querySelectorAll(".filter-button")
+            .querySelectorAll(
+                ".filter-button"
+            )
             .forEach(button => {
 
                 button.addEventListener(
@@ -494,13 +456,17 @@
                             .querySelectorAll(
                                 ".filter-button"
                             )
-                            .forEach(otherButton => {
+                            .forEach(
+                                otherButton => {
 
-                                otherButton
-                                    .classList
-                                    .remove("active");
+                                    otherButton
+                                        .classList
+                                        .remove(
+                                            "active"
+                                        );
 
-                            });
+                                }
+                            );
 
 
                         button.classList.add(
