@@ -46,6 +46,20 @@
             border-color: #333;
         }
 
+        .sort-area {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .sort-area select {
+            padding: 7px 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+        }
+
         .video {
             background: white;
             padding: 15px;
@@ -121,6 +135,22 @@
 
     </div>
 
+    <div class="sort-area">
+        <label for="sort-order">
+            並び順：
+        </label>
+
+        <select id="sort-order">
+            <option value="newest">
+                新しい順
+            </option>
+
+            <option value="oldest">
+                古い順
+            </option>
+        </select>
+    </div>
+
     <div id="count" class="count"></div>
 
     <div id="video-list">
@@ -132,8 +162,10 @@
 
         let allVideos = [];
         let currentFilter = "all";
+        let currentSort = "newest";
 
-        const STORAGE_KEY = "iniScrapbookStatuses";
+        const STORAGE_KEY =
+            "iniScrapbookStatuses";
 
 
         // 保存されているステータスを読み込む
@@ -142,7 +174,9 @@
             try {
 
                 const saved =
-                    localStorage.getItem(STORAGE_KEY);
+                    localStorage.getItem(
+                        STORAGE_KEY
+                    );
 
                 return saved
                     ? JSON.parse(saved)
@@ -176,10 +210,12 @@
         // 指定した動画がスクラップ済みか取得
         function isScrapped(videoId) {
 
-            const statuses = loadStatuses();
+            const statuses =
+                loadStatuses();
 
             return (
-                statuses[videoId]?.scrapped === true
+                statuses[videoId]?.scrapped
+                === true
             );
 
         }
@@ -191,7 +227,8 @@
             scrapped
         ) {
 
-            const statuses = loadStatuses();
+            const statuses =
+                loadStatuses();
 
             statuses[videoId] = {
                 scrapped: scrapped
@@ -207,9 +244,11 @@
             .then(response => {
 
                 if (!response.ok) {
+
                     throw new Error(
                         "動画データを取得できませんでした。"
                     );
+
                 }
 
                 return response.json();
@@ -225,7 +264,9 @@
             .catch(error => {
 
                 document
-                    .getElementById("video-list")
+                    .getElementById(
+                        "video-list"
+                    )
                     .textContent =
                     "動画データの読み込みに失敗しました。";
 
@@ -259,29 +300,74 @@
                             video.video_id
                         );
 
+
                     if (
                         currentFilter === "all"
                     ) {
+
                         return true;
+
                     }
+
 
                     if (
                         currentFilter ===
                         "unscrapped"
                     ) {
+
                         return !scrapped;
+
                     }
+
 
                     if (
                         currentFilter ===
                         "scrapped"
                     ) {
+
                         return scrapped;
+
                     }
+
 
                     return true;
 
                 });
+
+
+            // 公開日で並び替え
+            filteredVideos.sort(
+                (a, b) => {
+
+                    const dateA =
+                        new Date(
+                            a.published_at
+                        );
+
+                    const dateB =
+                        new Date(
+                            b.published_at
+                        );
+
+
+                    if (
+                        currentSort ===
+                        "newest"
+                    ) {
+
+                        return (
+                            dateB - dateA
+                        );
+
+                    }
+
+
+                    return (
+                        dateA - dateB
+                    );
+
+                }
+            );
 
 
             // 件数
@@ -290,143 +376,170 @@
 
 
             // 動画を表示
-            filteredVideos.forEach(video => {
+            filteredVideos.forEach(
+                video => {
 
-                const item =
-                    document.createElement(
-                        "div"
-                    );
+                    const item =
+                        document.createElement(
+                            "div"
+                        );
 
-                item.className = "video";
-
-
-                // タイトル
-                const title =
-                    document.createElement(
-                        "div"
-                    );
-
-                title.className =
-                    "video-title";
-
-                title.textContent =
-                    video.title;
+                    item.className =
+                        "video";
 
 
-                // 公開日
-                const date =
-                    document.createElement(
-                        "div"
-                    );
+                    // タイトル
+                    const title =
+                        document.createElement(
+                            "div"
+                        );
 
-                date.className = "date";
+                    title.className =
+                        "video-title";
 
-                const publishedDate =
-                    new Date(
-                        video.published_at
-                    );
+                    title.textContent =
+                        video.title;
 
-                date.textContent =
-                    "公開日：" +
-                    publishedDate
-                        .toLocaleDateString(
-                            "ja-JP"
+
+                    // 公開日
+                    const date =
+                        document.createElement(
+                            "div"
+                        );
+
+                    date.className =
+                        "date";
+
+
+                    const publishedDate =
+                        new Date(
+                            video.published_at
                         );
 
 
-                // スクラップ済みチェック
-                const scrapLabel =
-                    document.createElement(
-                        "label"
+                    date.textContent =
+                        "公開日：" +
+                        publishedDate
+                            .toLocaleDateString(
+                                "ja-JP"
+                            );
+
+
+                    // スクラップ済みチェック
+                    const scrapLabel =
+                        document.createElement(
+                            "label"
+                        );
+
+                    scrapLabel.className =
+                        "status-control";
+
+
+                    const scrapInput =
+                        document.createElement(
+                            "input"
+                        );
+
+                    scrapInput.type =
+                        "checkbox";
+
+                    scrapInput.checked =
+                        isScrapped(
+                            video.video_id
+                        );
+
+
+                    scrapLabel.appendChild(
+                        scrapInput
                     );
 
-                scrapLabel.className =
-                    "status-control";
-
-
-                const scrapInput =
-                    document.createElement(
-                        "input"
-                    );
-
-                scrapInput.type =
-                    "checkbox";
-
-                scrapInput.checked =
-                    isScrapped(
-                        video.video_id
+                    scrapLabel.append(
+                        "スクラップ済み"
                     );
 
 
-                scrapLabel.appendChild(
+                    // チェック変更時
                     scrapInput
-                );
+                        .addEventListener(
+                            "change",
+                            () => {
 
-                scrapLabel.append(
-                    "スクラップ済み"
-                );
+                                updateScrapStatus(
+                                    video.video_id,
+                                    scrapInput.checked
+                                );
 
 
-                // チェック変更時
-                scrapInput.addEventListener(
-                    "change",
-                    () => {
+                                /*
+                                 * 「未スクラップ」
+                                 * または
+                                 * 「スクラップ済み」
+                                 * 表示中なら、
+                                 * 状態変更後に
+                                 * 一覧を更新する。
+                                 */
+                                if (
+                                    currentFilter
+                                    !== "all"
+                                ) {
 
-                        updateScrapStatus(
-                            video.video_id,
-                            scrapInput.checked
+                                    displayVideos();
+
+                                }
+
+                            }
                         );
 
-                        /*
-                         * 「未スクラップ」または
-                         * 「スクラップ済み」で
-                         * 絞り込んでいる場合は、
-                         * チェック変更後に一覧を
-                         * 更新する。
-                         */
-                        if (
-                            currentFilter
-                            !== "all"
-                        ) {
-                            displayVideos();
-                        }
 
-                    }
-                );
+                    // YouTubeリンク
+                    const link =
+                        document.createElement(
+                            "a"
+                        );
+
+                    link.href =
+                        video.url;
+
+                    link.target =
+                        "_blank";
+
+                    link.rel =
+                        "noopener noreferrer";
+
+                    link.textContent =
+                        "YouTubeを見る";
 
 
-                // YouTubeリンク
-                const link =
-                    document.createElement(
-                        "a"
+                    // カードに追加
+                    item.appendChild(
+                        title
                     );
 
-                link.href = video.url;
-                link.target = "_blank";
-                link.rel =
-                    "noopener noreferrer";
+                    item.appendChild(
+                        date
+                    );
 
-                link.textContent =
-                    "YouTubeを見る";
+                    item.appendChild(
+                        scrapLabel
+                    );
 
-
-                // カードに追加
-                item.appendChild(title);
-                item.appendChild(date);
-                item.appendChild(
-                    scrapLabel
-                );
-                item.appendChild(link);
+                    item.appendChild(
+                        link
+                    );
 
 
-                list.appendChild(item);
+                    list.appendChild(
+                        item
+                    );
 
-            });
+                }
+            );
 
 
             // 該当動画が0件の場合
             if (
-                filteredVideos.length === 0
+                filteredVideos.length
+                === 0
             ) {
 
                 list.textContent =
@@ -449,7 +562,8 @@
                     () => {
 
                         currentFilter =
-                            button.dataset.filter;
+                            button.dataset
+                                .filter;
 
 
                         document
@@ -469,9 +583,11 @@
                             );
 
 
-                        button.classList.add(
-                            "active"
-                        );
+                        button
+                            .classList
+                            .add(
+                                "active"
+                            );
 
 
                         displayVideos();
@@ -480,6 +596,24 @@
                 );
 
             });
+
+
+        // 並び順を変更
+        document
+            .getElementById(
+                "sort-order"
+            )
+            .addEventListener(
+                "change",
+                event => {
+
+                    currentSort =
+                        event.target.value;
+
+                    displayVideos();
+
+                }
+            );
 
     </script>
 
