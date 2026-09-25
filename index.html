@@ -60,6 +60,44 @@
             font-size: 14px;
         }
 
+        .backup-area {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        .backup-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .backup-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .backup-button {
+            border: 1px solid #ccc;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .backup-button:hover {
+            background: #f3f3f3;
+        }
+
+        .backup-note {
+            color: #777;
+            font-size: 12px;
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+
         .video {
             background: white;
             padding: 15px;
@@ -102,6 +140,10 @@
             font-size: 14px;
             margin-bottom: 15px;
         }
+
+        #restore-file {
+            display: none;
+        }
     </style>
 </head>
 
@@ -136,11 +178,13 @@
     </div>
 
     <div class="sort-area">
+
         <label for="sort-order">
             並び順：
         </label>
 
         <select id="sort-order">
+
             <option value="newest">
                 新しい順
             </option>
@@ -148,7 +192,42 @@
             <option value="oldest">
                 古い順
             </option>
+
         </select>
+
+    </div>
+
+    <div class="backup-area">
+
+        <div class="backup-title">
+            ステータスのバックアップ
+        </div>
+
+        <div class="backup-buttons">
+
+            <button
+                id="backup-button"
+                class="backup-button">
+                バックアップを書き出す
+            </button>
+
+            <button
+                id="restore-button"
+                class="backup-button">
+                バックアップから復元
+            </button>
+
+        </div>
+
+        <p class="backup-note">
+            スクラップ済みの状態をJSONファイルとして保存・復元できます。
+        </p>
+
+        <input
+            type="file"
+            id="restore-file"
+            accept=".json,application/json">
+
     </div>
 
     <div id="count" class="count"></div>
@@ -166,6 +245,8 @@
 
         const STORAGE_KEY =
             "iniScrapbookStatuses";
+
+        const BACKUP_VERSION = 1;
 
 
         // 保存されているステータスを読み込む
@@ -239,6 +320,227 @@
         }
 
 
+        // バックアップを書き出す
+        function exportBackup() {
+
+            const statuses =
+                loadStatuses();
+
+            const backupData = {
+
+                app: "INI Scrapbook",
+
+                version:
+                    BACKUP_VERSION,
+
+                exported_at:
+                    new Date()
+                        .toISOString(),
+
+                statuses:
+                    statuses
+
+            };
+
+
+            const json =
+                JSON.stringify(
+                    backupData,
+                    null,
+                    2
+                );
+
+
+            const blob =
+                new Blob(
+                    [json],
+                    {
+                        type:
+                            "application/json"
+                    }
+                );
+
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+
+            const now =
+                new Date();
+
+            const year =
+                now.getFullYear();
+
+            const month =
+                String(
+                    now.getMonth() + 1
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+            const day =
+                String(
+                    now.getDate()
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            link.href = url;
+
+            link.download =
+                `ini-scrapbook-backup-${year}-${month}-${day}.json`;
+
+
+            document.body.appendChild(
+                link
+            );
+
+            link.click();
+
+            link.remove();
+
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        }
+
+
+        // バックアップファイルを復元する
+        function restoreBackup(file) {
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload = event => {
+
+                try {
+
+                    const backupData =
+                        JSON.parse(
+                            event.target.result
+                        );
+
+
+                    // INI Scrapbook用の
+                    // バックアップか確認
+                    if (
+                        backupData.app
+                        !== "INI Scrapbook"
+                    ) {
+
+                        throw new Error(
+                            "INI Scrapbookのバックアップではありません。"
+                        );
+
+                    }
+
+
+                    // バックアップの
+                    // バージョンを確認
+                    if (
+                        backupData.version
+                        !== BACKUP_VERSION
+                    ) {
+
+                        throw new Error(
+                            "対応していないバックアップ形式です。"
+                        );
+
+                    }
+
+
+                    // statusesが
+                    // オブジェクトか確認
+                    if (
+                        !backupData.statuses
+                        ||
+                        typeof backupData.statuses
+                        !== "object"
+                        ||
+                        Array.isArray(
+                            backupData.statuses
+                        )
+                    ) {
+
+                        throw new Error(
+                            "ステータスデータが正しくありません。"
+                        );
+
+                    }
+
+
+                    const confirmed =
+                        confirm(
+                            "現在のスクラップ状態を、このバックアップの内容で置き換えます。\n\n復元してもよろしいですか？"
+                        );
+
+
+                    if (!confirmed) {
+
+                        return;
+
+                    }
+
+
+                    saveStatuses(
+                        backupData.statuses
+                    );
+
+
+                    displayVideos();
+
+
+                    alert(
+                        "バックアップを復元しました。"
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+                    alert(
+                        "バックアップを復元できませんでした。\n\n" +
+                        error.message
+                    );
+
+                }
+
+            };
+
+
+            reader.onerror = () => {
+
+                alert(
+                    "バックアップファイルを読み込めませんでした。"
+                );
+
+            };
+
+
+            reader.readAsText(
+                file
+            );
+
+        }
+
+
         // YouTube動画データを読み込む
         fetch("data/youtube_videos.json")
             .then(response => {
@@ -270,7 +572,9 @@
                     .textContent =
                     "動画データの読み込みに失敗しました。";
 
-                console.error(error);
+                console.error(
+                    error
+                );
 
             });
 
@@ -291,48 +595,51 @@
             list.innerHTML = "";
 
 
-            // 現在のフィルターに合う動画だけ取得
+            // フィルター
             const filteredVideos =
-                allVideos.filter(video => {
+                allVideos.filter(
+                    video => {
 
-                    const scrapped =
-                        isScrapped(
-                            video.video_id
-                        );
+                        const scrapped =
+                            isScrapped(
+                                video.video_id
+                            );
 
 
-                    if (
-                        currentFilter === "all"
-                    ) {
+                        if (
+                            currentFilter
+                            === "all"
+                        ) {
+
+                            return true;
+
+                        }
+
+
+                        if (
+                            currentFilter
+                            === "unscrapped"
+                        ) {
+
+                            return !scrapped;
+
+                        }
+
+
+                        if (
+                            currentFilter
+                            === "scrapped"
+                        ) {
+
+                            return scrapped;
+
+                        }
+
 
                         return true;
 
                     }
-
-
-                    if (
-                        currentFilter ===
-                        "unscrapped"
-                    ) {
-
-                        return !scrapped;
-
-                    }
-
-
-                    if (
-                        currentFilter ===
-                        "scrapped"
-                    ) {
-
-                        return scrapped;
-
-                    }
-
-
-                    return true;
-
-                });
+                );
 
 
             // 公開日で並び替え
@@ -351,8 +658,8 @@
 
 
                     if (
-                        currentSort ===
-                        "newest"
+                        currentSort
+                        === "newest"
                     ) {
 
                         return (
@@ -470,14 +777,6 @@
                                 );
 
 
-                                /*
-                                 * 「未スクラップ」
-                                 * または
-                                 * 「スクラップ済み」
-                                 * 表示中なら、
-                                 * 状態変更後に
-                                 * 一覧を更新する。
-                                 */
                                 if (
                                     currentFilter
                                     !== "all"
@@ -510,7 +809,6 @@
                         "YouTubeを見る";
 
 
-                    // カードに追加
                     item.appendChild(
                         title
                     );
@@ -555,47 +853,50 @@
             .querySelectorAll(
                 ".filter-button"
             )
-            .forEach(button => {
+            .forEach(
+                button => {
 
-                button.addEventListener(
-                    "click",
-                    () => {
+                    button.addEventListener(
+                        "click",
+                        () => {
 
-                        currentFilter =
-                            button.dataset
-                                .filter;
-
-
-                        document
-                            .querySelectorAll(
-                                ".filter-button"
-                            )
-                            .forEach(
-                                otherButton => {
-
-                                    otherButton
-                                        .classList
-                                        .remove(
-                                            "active"
-                                        );
-
-                                }
-                            );
+                            currentFilter =
+                                button
+                                    .dataset
+                                    .filter;
 
 
-                        button
-                            .classList
-                            .add(
-                                "active"
-                            );
+                            document
+                                .querySelectorAll(
+                                    ".filter-button"
+                                )
+                                .forEach(
+                                    otherButton => {
+
+                                        otherButton
+                                            .classList
+                                            .remove(
+                                                "active"
+                                            );
+
+                                    }
+                                );
 
 
-                        displayVideos();
+                            button
+                                .classList
+                                .add(
+                                    "active"
+                                );
 
-                    }
-                );
 
-            });
+                            displayVideos();
+
+                        }
+                    );
+
+                }
+            );
 
 
         // 並び順を変更
@@ -611,6 +912,76 @@
                         event.target.value;
 
                     displayVideos();
+
+                }
+            );
+
+
+        // バックアップを書き出す
+        document
+            .getElementById(
+                "backup-button"
+            )
+            .addEventListener(
+                "click",
+                exportBackup
+            );
+
+
+        // 復元ボタン
+        document
+            .getElementById(
+                "restore-button"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .getElementById(
+                            "restore-file"
+                        )
+                        .click();
+
+                }
+            );
+
+
+        // 復元するファイルを選択
+        document
+            .getElementById(
+                "restore-file"
+            )
+            .addEventListener(
+                "change",
+                event => {
+
+                    const file =
+                        event
+                            .target
+                            .files[0];
+
+
+                    if (!file) {
+
+                        return;
+
+                    }
+
+
+                    restoreBackup(
+                        file
+                    );
+
+
+                    /*
+                     * 同じファイルを
+                     * もう一度選択しても
+                     * changeイベントが
+                     * 発生するようにする。
+                     */
+                    event.target.value =
+                        "";
 
                 }
             );
