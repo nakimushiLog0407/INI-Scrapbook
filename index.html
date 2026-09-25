@@ -37,9 +37,7 @@
             margin-bottom: 20px;
         }
 
-        /*
-         * 右上メニュー
-         */
+        /* 右上メニュー */
         .menu-wrapper {
             position: relative;
             flex-shrink: 0;
@@ -74,8 +72,7 @@
             background: white;
             border: 1px solid #ddd;
             border-radius: 12px;
-            box-shadow:
-                0 4px 16px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
             z-index: 1000;
         }
 
@@ -116,9 +113,7 @@
             line-height: 1.5;
         }
 
-        /*
-         * フィルター
-         */
+        /* フィルター */
         .filters {
             display: flex;
             gap: 8px;
@@ -141,9 +136,7 @@
             border-color: #333;
         }
 
-        /*
-         * 並び順
-         */
+        /* 並び順 */
         .sort-area {
             margin-bottom: 15px;
             font-size: 14px;
@@ -158,18 +151,14 @@
             font-size: 14px;
         }
 
-        /*
-         * 件数
-         */
+        /* 件数 */
         .count {
             color: #777;
             font-size: 14px;
             margin-bottom: 15px;
         }
 
-        /*
-         * 動画カード
-         */
+        /* 動画カード */
         .video {
             background: white;
             padding: 15px;
@@ -188,12 +177,18 @@
             margin-bottom: 10px;
         }
 
+        .status-controls {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
         .status-control {
             display: flex;
             align-items: center;
             gap: 7px;
             font-size: 14px;
-            margin-bottom: 10px;
             cursor: pointer;
         }
 
@@ -207,9 +202,6 @@
             color: #06c;
         }
 
-        /*
-         * 復元用ファイル選択は非表示
-         */
         #restore-file {
             display: none;
         }
@@ -230,7 +222,6 @@
 
         </div>
 
-
         <div class="menu-wrapper">
 
             <button
@@ -241,7 +232,6 @@
                 aria-expanded="false">
                 &#8942;
             </button>
-
 
             <div
                 id="menu-panel"
@@ -266,8 +256,7 @@
                 </button>
 
                 <div class="menu-note">
-                    スクラップ済みの状態を
-                    JSONファイルとして
+                    スクラップ状態をJSONファイルとして
                     保存・復元できます。
                 </div>
 
@@ -288,14 +277,20 @@
 
         <button
             class="filter-button"
-            data-filter="unscrapped">
-            未スクラップ
+            data-filter="unprocessed">
+            未処理
         </button>
 
         <button
             class="filter-button"
             data-filter="scrapped">
             スクラップ済み
+        </button>
+
+        <button
+            class="filter-button"
+            data-filter="excluded">
+            対象外
         </button>
 
     </div>
@@ -395,18 +390,24 @@
 
 
         /*
-         * 指定した動画が
-         * スクラップ済みか取得
+         * 指定した動画の状態を取得
          */
-        function isScrapped(videoId) {
+        function getStatus(videoId) {
 
             const statuses =
                 loadStatuses();
 
-            return (
-                statuses[videoId]?.scrapped
-                === true
-            );
+            return {
+
+                scrapped:
+                    statuses[videoId]?.scrapped
+                    === true,
+
+                excluded:
+                    statuses[videoId]?.excluded
+                    === true
+
+            };
 
         }
 
@@ -414,16 +415,18 @@
         /*
          * スクラップ状態を変更
          */
-        function updateScrapStatus(
+        function updateStatus(
             videoId,
-            scrapped
+            scrapped,
+            excluded
         ) {
 
             const statuses =
                 loadStatuses();
 
             statuses[videoId] = {
-                scrapped: scrapped
+                scrapped: scrapped,
+                excluded: excluded
             };
 
             saveStatuses(statuses);
@@ -525,11 +528,9 @@
 
             link.remove();
 
-
             URL.revokeObjectURL(
                 url
             );
-
 
             closeMenu();
 
@@ -552,18 +553,13 @@
 
                         const backupData =
                             JSON.parse(
-                                event.target
-                                    .result
+                                event.target.result
                             );
 
 
-                        /*
-                         * INI Scrapbook用か確認
-                         */
                         if (
                             backupData.app
-                            !==
-                            "INI Scrapbook"
+                            !== "INI Scrapbook"
                         ) {
 
                             throw new Error(
@@ -573,13 +569,9 @@
                         }
 
 
-                        /*
-                         * バージョン確認
-                         */
                         if (
                             backupData.version
-                            !==
-                            BACKUP_VERSION
+                            !== BACKUP_VERSION
                         ) {
 
                             throw new Error(
@@ -589,9 +581,6 @@
                         }
 
 
-                        /*
-                         * statuses確認
-                         */
                         if (
                             !backupData.statuses
                             ||
@@ -627,9 +616,7 @@
                             backupData.statuses
                         );
 
-
                         displayVideos();
-
 
                         alert(
                             "バックアップを復元しました。"
@@ -671,7 +658,7 @@
 
 
         /*
-         * メニューを開閉
+         * メニュー
          */
         const menuButton =
             document.getElementById(
@@ -735,10 +722,6 @@
             "click",
             event => {
 
-                /*
-                 * document側のクリック処理まで
-                 * 伝わらないようにする
-                 */
                 event.stopPropagation();
 
                 toggleMenu();
@@ -757,9 +740,6 @@
         );
 
 
-        /*
-         * メニュー外を押したら閉じる
-         */
         document.addEventListener(
             "click",
             () => {
@@ -837,8 +817,8 @@
                 allVideos.filter(
                     video => {
 
-                        const scrapped =
-                            isScrapped(
+                        const status =
+                            getStatus(
                                 video.video_id
                             );
 
@@ -855,10 +835,14 @@
 
                         if (
                             currentFilter
-                            === "unscrapped"
+                            === "unprocessed"
                         ) {
 
-                            return !scrapped;
+                            return (
+                                !status.scrapped
+                                &&
+                                !status.excluded
+                            );
 
                         }
 
@@ -868,7 +852,21 @@
                             === "scrapped"
                         ) {
 
-                            return scrapped;
+                            return (
+                                status.scrapped
+                            );
+
+                        }
+
+
+                        if (
+                            currentFilter
+                            === "excluded"
+                        ) {
+
+                            return (
+                                status.excluded
+                            );
 
                         }
 
@@ -924,10 +922,16 @@
 
 
             /*
-             * 動画を表示
+             * 動画カード
              */
             filteredVideos.forEach(
                 video => {
+
+                    const currentStatus =
+                        getStatus(
+                            video.video_id
+                        );
+
 
                     const item =
                         document.createElement(
@@ -980,7 +984,19 @@
 
 
                     /*
-                     * スクラップ済みチェック
+                     * ステータスエリア
+                     */
+                    const statusControls =
+                        document.createElement(
+                            "div"
+                        );
+
+                    statusControls.className =
+                        "status-controls";
+
+
+                    /*
+                     * スクラップ済み
                      */
                     const scrapLabel =
                         document.createElement(
@@ -1000,9 +1016,7 @@
                         "checkbox";
 
                     scrapInput.checked =
-                        isScrapped(
-                            video.video_id
-                        );
+                        currentStatus.scrapped;
 
 
                     scrapLabel.appendChild(
@@ -1015,35 +1029,127 @@
 
 
                     /*
-                     * チェック変更時
+                     * スクラップ対象外
                      */
-                    scrapInput
-                        .addEventListener(
-                            "change",
-                            () => {
+                    const excludedLabel =
+                        document.createElement(
+                            "label"
+                        );
 
-                                updateScrapStatus(
-                                    video.video_id,
-                                    scrapInput.checked
-                                );
+                    excludedLabel.className =
+                        "status-control";
 
 
-                                /*
-                                 * 絞り込み中なら
-                                 * 状態変更後に
-                                 * 一覧を更新
-                                 */
-                                if (
-                                    currentFilter
-                                    !== "all"
-                                ) {
+                    const excludedInput =
+                        document.createElement(
+                            "input"
+                        );
 
-                                    displayVideos();
+                    excludedInput.type =
+                        "checkbox";
 
-                                }
+                    excludedInput.checked =
+                        currentStatus.excluded;
+
+
+                    excludedLabel.appendChild(
+                        excludedInput
+                    );
+
+                    excludedLabel.append(
+                        "スクラップ対象外"
+                    );
+
+
+                    statusControls.appendChild(
+                        scrapLabel
+                    );
+
+                    statusControls.appendChild(
+                        excludedLabel
+                    );
+
+
+                    /*
+                     * 「スクラップ済み」を変更
+                     */
+                    scrapInput.addEventListener(
+                        "change",
+                        () => {
+
+                            /*
+                             * スクラップ済みにしたら
+                             * 対象外を解除
+                             */
+                            if (
+                                scrapInput.checked
+                            ) {
+
+                                excludedInput.checked =
+                                    false;
 
                             }
-                        );
+
+
+                            updateStatus(
+                                video.video_id,
+                                scrapInput.checked,
+                                excludedInput.checked
+                            );
+
+
+                            if (
+                                currentFilter
+                                !== "all"
+                            ) {
+
+                                displayVideos();
+
+                            }
+
+                        }
+                    );
+
+
+                    /*
+                     * 「スクラップ対象外」を変更
+                     */
+                    excludedInput.addEventListener(
+                        "change",
+                        () => {
+
+                            /*
+                             * 対象外にしたら
+                             * スクラップ済みを解除
+                             */
+                            if (
+                                excludedInput.checked
+                            ) {
+
+                                scrapInput.checked =
+                                    false;
+
+                            }
+
+
+                            updateStatus(
+                                video.video_id,
+                                scrapInput.checked,
+                                excludedInput.checked
+                            );
+
+
+                            if (
+                                currentFilter
+                                !== "all"
+                            ) {
+
+                                displayVideos();
+
+                            }
+
+                        }
+                    );
 
 
                     /*
@@ -1079,7 +1185,7 @@
                     );
 
                     item.appendChild(
-                        scrapLabel
+                        statusControls
                     );
 
                     item.appendChild(
@@ -1249,10 +1355,6 @@
                     );
 
 
-                    /*
-                     * 同じファイルを
-                     * 再選択できるようにする
-                     */
                     event.target.value =
                         "";
 
