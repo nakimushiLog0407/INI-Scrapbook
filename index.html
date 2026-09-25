@@ -15,15 +15,110 @@
             color: #333;
         }
 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .header-text {
+            min-width: 0;
+        }
+
         h1 {
+            margin-top: 0;
             margin-bottom: 5px;
         }
 
         .description {
             color: #666;
+            margin-top: 0;
             margin-bottom: 20px;
         }
 
+        /*
+         * 右上メニュー
+         */
+        .menu-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .menu-button {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: #333;
+            font-size: 26px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-button:hover {
+            background: #e9e9e9;
+        }
+
+        .menu-panel {
+            display: none;
+            position: absolute;
+            top: 46px;
+            right: 0;
+            width: 240px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+        }
+
+        .menu-panel.open {
+            display: block;
+        }
+
+        .menu-title {
+            padding: 4px 6px 10px;
+            color: #777;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .menu-item {
+            display: block;
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 11px 10px;
+            border-radius: 8px;
+            color: #333;
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: #f3f3f3;
+        }
+
+        .menu-note {
+            border-top: 1px solid #eee;
+            margin-top: 8px;
+            padding: 10px 6px 2px;
+            color: #888;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /*
+         * フィルター
+         */
         .filters {
             display: flex;
             gap: 8px;
@@ -46,6 +141,9 @@
             border-color: #333;
         }
 
+        /*
+         * 並び順
+         */
         .sort-area {
             margin-bottom: 15px;
             font-size: 14px;
@@ -60,44 +158,18 @@
             font-size: 14px;
         }
 
-        .backup-area {
-            background: white;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 10px;
-        }
-
-        .backup-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .backup-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .backup-button {
-            border: 1px solid #ccc;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .backup-button:hover {
-            background: #f3f3f3;
-        }
-
-        .backup-note {
+        /*
+         * 件数
+         */
+        .count {
             color: #777;
-            font-size: 12px;
-            margin-top: 10px;
-            margin-bottom: 0;
+            font-size: 14px;
+            margin-bottom: 15px;
         }
 
+        /*
+         * 動画カード
+         */
         .video {
             background: white;
             padding: 15px;
@@ -135,12 +207,9 @@
             color: #06c;
         }
 
-        .count {
-            color: #777;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
+        /*
+         * 復元用ファイル選択は非表示
+         */
         #restore-file {
             display: none;
         }
@@ -149,11 +218,65 @@
 
 <body>
 
-    <h1>INI Scrapbook</h1>
+    <div class="header">
 
-    <p class="description">
-        YouTube動画一覧
-    </p>
+        <div class="header-text">
+
+            <h1>INI Scrapbook</h1>
+
+            <p class="description">
+                YouTube動画一覧
+            </p>
+
+        </div>
+
+
+        <div class="menu-wrapper">
+
+            <button
+                id="menu-button"
+                class="menu-button"
+                type="button"
+                aria-label="メニューを開く"
+                aria-expanded="false">
+                &#8942;
+            </button>
+
+
+            <div
+                id="menu-panel"
+                class="menu-panel">
+
+                <div class="menu-title">
+                    データ管理
+                </div>
+
+                <button
+                    id="backup-button"
+                    class="menu-item"
+                    type="button">
+                    バックアップを書き出す
+                </button>
+
+                <button
+                    id="restore-button"
+                    class="menu-item"
+                    type="button">
+                    バックアップから復元
+                </button>
+
+                <div class="menu-note">
+                    スクラップ済みの状態を
+                    JSONファイルとして
+                    保存・復元できます。
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
     <div class="filters">
 
@@ -177,6 +300,7 @@
 
     </div>
 
+
     <div class="sort-area">
 
         <label for="sort-order">
@@ -197,44 +321,22 @@
 
     </div>
 
-    <div class="backup-area">
 
-        <div class="backup-title">
-            ステータスのバックアップ
-        </div>
-
-        <div class="backup-buttons">
-
-            <button
-                id="backup-button"
-                class="backup-button">
-                バックアップを書き出す
-            </button>
-
-            <button
-                id="restore-button"
-                class="backup-button">
-                バックアップから復元
-            </button>
-
-        </div>
-
-        <p class="backup-note">
-            スクラップ済みの状態をJSONファイルとして保存・復元できます。
-        </p>
-
-        <input
-            type="file"
-            id="restore-file"
-            accept=".json,application/json">
-
+    <div
+        id="count"
+        class="count">
     </div>
 
-    <div id="count" class="count"></div>
 
     <div id="video-list">
         読み込み中……
     </div>
+
+
+    <input
+        type="file"
+        id="restore-file"
+        accept=".json,application/json">
 
 
     <script>
@@ -249,7 +351,9 @@
         const BACKUP_VERSION = 1;
 
 
-        // 保存されているステータスを読み込む
+        /*
+         * 保存されているステータスを読み込む
+         */
         function loadStatuses() {
 
             try {
@@ -277,7 +381,9 @@
         }
 
 
-        // ステータスを保存する
+        /*
+         * ステータスを保存する
+         */
         function saveStatuses(statuses) {
 
             localStorage.setItem(
@@ -288,7 +394,10 @@
         }
 
 
-        // 指定した動画がスクラップ済みか取得
+        /*
+         * 指定した動画が
+         * スクラップ済みか取得
+         */
         function isScrapped(videoId) {
 
             const statuses =
@@ -302,7 +411,9 @@
         }
 
 
-        // スクラップ状態を変更
+        /*
+         * スクラップ状態を変更
+         */
         function updateScrapStatus(
             videoId,
             scrapped
@@ -320,7 +431,9 @@
         }
 
 
-        // バックアップを書き出す
+        /*
+         * バックアップを書き出す
+         */
         function exportBackup() {
 
             const statuses =
@@ -328,7 +441,8 @@
 
             const backupData = {
 
-                app: "INI Scrapbook",
+                app:
+                    "INI Scrapbook",
 
                 version:
                     BACKUP_VERSION,
@@ -396,7 +510,8 @@
                 );
 
 
-            link.href = url;
+            link.href =
+                url;
 
             link.download =
                 `ini-scrapbook-backup-${year}-${month}-${day}.json`;
@@ -415,123 +530,137 @@
                 url
             );
 
+
+            closeMenu();
+
         }
 
 
-        // バックアップファイルを復元する
+        /*
+         * バックアップを復元
+         */
         function restoreBackup(file) {
 
             const reader =
                 new FileReader();
 
 
-            reader.onload = event => {
+            reader.onload =
+                event => {
 
-                try {
+                    try {
 
-                    const backupData =
-                        JSON.parse(
-                            event.target.result
-                        );
-
-
-                    // INI Scrapbook用の
-                    // バックアップか確認
-                    if (
-                        backupData.app
-                        !== "INI Scrapbook"
-                    ) {
-
-                        throw new Error(
-                            "INI Scrapbookのバックアップではありません。"
-                        );
-
-                    }
+                        const backupData =
+                            JSON.parse(
+                                event.target
+                                    .result
+                            );
 
 
-                    // バックアップの
-                    // バージョンを確認
-                    if (
-                        backupData.version
-                        !== BACKUP_VERSION
-                    ) {
+                        /*
+                         * INI Scrapbook用か確認
+                         */
+                        if (
+                            backupData.app
+                            !==
+                            "INI Scrapbook"
+                        ) {
 
-                        throw new Error(
-                            "対応していないバックアップ形式です。"
-                        );
+                            throw new Error(
+                                "INI Scrapbookのバックアップではありません。"
+                            );
 
-                    }
+                        }
 
 
-                    // statusesが
-                    // オブジェクトか確認
-                    if (
-                        !backupData.statuses
-                        ||
-                        typeof backupData.statuses
-                        !== "object"
-                        ||
-                        Array.isArray(
+                        /*
+                         * バージョン確認
+                         */
+                        if (
+                            backupData.version
+                            !==
+                            BACKUP_VERSION
+                        ) {
+
+                            throw new Error(
+                                "対応していないバックアップ形式です。"
+                            );
+
+                        }
+
+
+                        /*
+                         * statuses確認
+                         */
+                        if (
+                            !backupData.statuses
+                            ||
+                            typeof backupData.statuses
+                            !== "object"
+                            ||
+                            Array.isArray(
+                                backupData.statuses
+                            )
+                        ) {
+
+                            throw new Error(
+                                "ステータスデータが正しくありません。"
+                            );
+
+                        }
+
+
+                        const confirmed =
+                            confirm(
+                                "現在のスクラップ状態を、このバックアップの内容で置き換えます。\n\n復元してもよろしいですか？"
+                            );
+
+
+                        if (!confirmed) {
+
+                            return;
+
+                        }
+
+
+                        saveStatuses(
                             backupData.statuses
-                        )
-                    ) {
+                        );
 
-                        throw new Error(
-                            "ステータスデータが正しくありません。"
+
+                        displayVideos();
+
+
+                        alert(
+                            "バックアップを復元しました。"
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+                        alert(
+                            "バックアップを復元できませんでした。\n\n"
+                            +
+                            error.message
                         );
 
                     }
 
-
-                    const confirmed =
-                        confirm(
-                            "現在のスクラップ状態を、このバックアップの内容で置き換えます。\n\n復元してもよろしいですか？"
-                        );
+                };
 
 
-                    if (!confirmed) {
-
-                        return;
-
-                    }
-
-
-                    saveStatuses(
-                        backupData.statuses
-                    );
-
-
-                    displayVideos();
-
+            reader.onerror =
+                () => {
 
                     alert(
-                        "バックアップを復元しました。"
+                        "バックアップファイルを読み込めませんでした。"
                     );
 
-
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-                    alert(
-                        "バックアップを復元できませんでした。\n\n" +
-                        error.message
-                    );
-
-                }
-
-            };
-
-
-            reader.onerror = () => {
-
-                alert(
-                    "バックアップファイルを読み込めませんでした。"
-                );
-
-            };
+                };
 
 
             reader.readAsText(
@@ -541,7 +670,109 @@
         }
 
 
-        // YouTube動画データを読み込む
+        /*
+         * メニューを開閉
+         */
+        const menuButton =
+            document.getElementById(
+                "menu-button"
+            );
+
+        const menuPanel =
+            document.getElementById(
+                "menu-panel"
+            );
+
+
+        function openMenu() {
+
+            menuPanel
+                .classList
+                .add("open");
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+        }
+
+
+        function closeMenu() {
+
+            menuPanel
+                .classList
+                .remove("open");
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+
+
+        function toggleMenu() {
+
+            if (
+                menuPanel
+                    .classList
+                    .contains("open")
+            ) {
+
+                closeMenu();
+
+            } else {
+
+                openMenu();
+
+            }
+
+        }
+
+
+        menuButton.addEventListener(
+            "click",
+            event => {
+
+                /*
+                 * document側のクリック処理まで
+                 * 伝わらないようにする
+                 */
+                event.stopPropagation();
+
+                toggleMenu();
+
+            }
+        );
+
+
+        menuPanel.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+            }
+        );
+
+
+        /*
+         * メニュー外を押したら閉じる
+         */
+        document.addEventListener(
+            "click",
+            () => {
+
+                closeMenu();
+
+            }
+        );
+
+
+        /*
+         * YouTube動画データを読み込む
+         */
         fetch("data/youtube_videos.json")
             .then(response => {
 
@@ -558,7 +789,8 @@
             })
             .then(videos => {
 
-                allVideos = videos;
+                allVideos =
+                    videos;
 
                 displayVideos();
 
@@ -579,7 +811,9 @@
             });
 
 
-        // 動画一覧を表示
+        /*
+         * 動画一覧を表示
+         */
         function displayVideos() {
 
             const list =
@@ -592,10 +826,13 @@
                     "count"
                 );
 
-            list.innerHTML = "";
+            list.innerHTML =
+                "";
 
 
-            // フィルター
+            /*
+             * フィルター
+             */
             const filteredVideos =
                 allVideos.filter(
                     video => {
@@ -642,7 +879,9 @@
                 );
 
 
-            // 公開日で並び替え
+            /*
+             * 公開日で並び替え
+             */
             filteredVideos.sort(
                 (a, b) => {
 
@@ -677,12 +916,16 @@
             );
 
 
-            // 件数
+            /*
+             * 件数
+             */
             count.textContent =
                 `${filteredVideos.length}件`;
 
 
-            // 動画を表示
+            /*
+             * 動画を表示
+             */
             filteredVideos.forEach(
                 video => {
 
@@ -695,7 +938,9 @@
                         "video";
 
 
-                    // タイトル
+                    /*
+                     * タイトル
+                     */
                     const title =
                         document.createElement(
                             "div"
@@ -708,7 +953,9 @@
                         video.title;
 
 
-                    // 公開日
+                    /*
+                     * 公開日
+                     */
                     const date =
                         document.createElement(
                             "div"
@@ -732,7 +979,9 @@
                             );
 
 
-                    // スクラップ済みチェック
+                    /*
+                     * スクラップ済みチェック
+                     */
                     const scrapLabel =
                         document.createElement(
                             "label"
@@ -765,7 +1014,9 @@
                     );
 
 
-                    // チェック変更時
+                    /*
+                     * チェック変更時
+                     */
                     scrapInput
                         .addEventListener(
                             "change",
@@ -777,6 +1028,11 @@
                                 );
 
 
+                                /*
+                                 * 絞り込み中なら
+                                 * 状態変更後に
+                                 * 一覧を更新
+                                 */
                                 if (
                                     currentFilter
                                     !== "all"
@@ -790,7 +1046,9 @@
                         );
 
 
-                    // YouTubeリンク
+                    /*
+                     * YouTubeリンク
+                     */
                     const link =
                         document.createElement(
                             "a"
@@ -809,6 +1067,9 @@
                         "YouTubeを見る";
 
 
+                    /*
+                     * カードに追加
+                     */
                     item.appendChild(
                         title
                     );
@@ -834,7 +1095,9 @@
             );
 
 
-            // 該当動画が0件の場合
+            /*
+             * 該当動画が0件の場合
+             */
             if (
                 filteredVideos.length
                 === 0
@@ -848,7 +1111,9 @@
         }
 
 
-        // フィルターボタン
+        /*
+         * フィルターボタン
+         */
         document
             .querySelectorAll(
                 ".filter-button"
@@ -899,7 +1164,9 @@
             );
 
 
-        // 並び順を変更
+        /*
+         * 並び順を変更
+         */
         document
             .getElementById(
                 "sort-order"
@@ -917,7 +1184,9 @@
             );
 
 
-        // バックアップを書き出す
+        /*
+         * バックアップを書き出す
+         */
         document
             .getElementById(
                 "backup-button"
@@ -928,7 +1197,9 @@
             );
 
 
-        // 復元ボタン
+        /*
+         * 復元ボタン
+         */
         document
             .getElementById(
                 "restore-button"
@@ -936,6 +1207,8 @@
             .addEventListener(
                 "click",
                 () => {
+
+                    closeMenu();
 
                     document
                         .getElementById(
@@ -947,7 +1220,9 @@
             );
 
 
-        // 復元するファイルを選択
+        /*
+         * 復元ファイルを選択
+         */
         document
             .getElementById(
                 "restore-file"
@@ -976,9 +1251,7 @@
 
                     /*
                      * 同じファイルを
-                     * もう一度選択しても
-                     * changeイベントが
-                     * 発生するようにする。
+                     * 再選択できるようにする
                      */
                     event.target.value =
                         "";
